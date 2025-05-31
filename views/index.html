@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Profile Viewer</title>
+    <!-- Flowbite CSS (via CDN) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.5.2/flowbite.min.css" rel="stylesheet" />
+    <!-- Tailwind CSS (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900">
+    <div class="container mx-auto p-4">
+        <!-- Search Form -->
+        <div class="mb-6">
+            <form id="searchForm" class="flex items-center max-w-md mx-auto">
+                <div class="relative w-full">
+                    <input type="text" id="username" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter Instagram username" required />
+                </div>
+                <button type="submit" class="ml-2 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-blue-800">
+                    Search
+                </button>
+            </form>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden mb-6 p-4 text-red-800 bg-red-50 rounded-lg dark:bg-red-800 dark:text-red-400" role="alert"></div>
+
+        <!-- Profile Section -->
+        <div id="profileSection" class="hidden mb-6">
+            <div class="max-w-md mx-auto bg-white rounded-lg shadow-md dark:bg-gray-800">
+                <div class="flex items-center p-4">
+                    <img id="profilePic" class="w-24 h-24 rounded-full mr-4" src="" alt="Profile Picture">
+                    <div>
+                        <h2 id="fullName" class="text-xl font-semibold text-gray-900 dark:text-white"></h2>
+                        <p id="usernameDisplay" class="text-gray-600 dark:text-gray-400"></p>
+                        <p id="biography" class="text-gray-600 dark:text-gray-400"></p>
+                        <a id="externalUrl" class="text-blue-600 hover:underline dark:text-blue-400" href="#" target="_blank"></a>
+                    </div>
+                </div>
+                <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="font-semibold text-gray-900 dark:text-white">Followers</p>
+                            <p id="followersCount" class="text-gray-600 dark:text-gray-400"></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-900 dark:text-white">Following</p>
+                            <p id="followingCount" class="text-gray-600 dark:text-gray-400"></p>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-900 dark:text-white">Posts</p>
+                            <p id="postsCount" class="text-gray-600 dark:text-gray-400"></p>
+                        </div>
+                    </div>
+                    <div id="accountStatus" class="mt-2">
+                        <span id="isPrivate" class="hidden inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-200"></span>
+                        <span id="isVerified" class="hidden inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-200"></span>
+                        <span id="isBusiness" class="hidden inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-200"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts Section -->
+        <div id="postsSection" class="hidden">
+            <h2 class="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Recent Posts</h2>
+            <div id="postsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+        </div>
+    </div>
+
+    <!-- Flowbite JS (via CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.5.2/flowbite.min.js"></script>
+    <!-- JavaScript for Fetching and Displaying Data -->
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            if (!username) {
+                showError('Please enter a username');
+                return;
+            }
+
+            // Reset UI
+            document.getElementById('errorMessage').classList.add('hidden');
+            document.getElementById('profileSection').classList.add('hidden');
+            document.getElementById('postsSection').classList.add('hidden');
+
+            try {
+                const response = await fetch(`/api/profile/${username}`);
+                const profile = await response.json();
+
+                if (response.ok) {
+                    // Populate Profile
+                    document.getElementById('profilePic').src = profile.profile_pic_url;
+                    document.getElementById('fullName').textContent = profile.full_name || 'N/A';
+                    document.getElementById('usernameDisplay').textContent = `@${profile.username}`;
+                    document.getElementById('biography').textContent = profile.biography || 'No biography available';
+                    document.getElementById('externalUrl').href = profile.external_url || '#';
+                    document.getElementById('externalUrl').textContent = profile.external_url || 'No link available';
+                    document.getElementById('followersCount').textContent = profile.followers_count.toLocaleString();
+                    document.getElementById('followingCount').textContent = profile.following_count.toLocaleString();
+                    document.getElementById('postsCount').textContent = profile.posts_count.toLocaleString();
+
+                    // Account Status Badges
+                    document.getElementById('isPrivate').classList.toggle('hidden', !profile.is_private);
+                    document.getElementById('isPrivate').textContent = profile.is_private ? 'Private' : '';
+                    document.getElementById('isVerified').classList.toggle('hidden', !profile.is_verified);
+                    document.getElementById('isVerified').textContent = profile.is_verified ? 'Verified' : '';
+                    document.getElementById('isBusiness').classList.toggle('hidden', !profile.is_business_account);
+                    document.getElementById('isBusiness').textContent = profile.is_business_account ? 'Business' : '';
+
+                    // Show Profile Section
+                    document.getElementById('profileSection').classList.remove('hidden');
+
+                    // Populate Posts
+                    const postsGrid = document.getElementById('postsGrid');
+                    postsGrid.innerHTML = '';
+                    profile.posts.forEach(post => {
+                        const postElement = document.createElement('div');
+                        postElement.className = 'bg-white rounded-lg shadow-md dark:bg-gray-800';
+                        postElement.innerHTML = `
+                            <div class="p-4">
+                                ${post.is_video ? `
+                                    <video controls class="w-full h-64 object-cover rounded-lg">
+                                        <source src="${post.video_url}" type="video/mp4">
+                                    </video>
+                                ` : `
+                                    <img src="${post.thumbnail_url}" alt="Post" class="w-full h-64 object-cover rounded-lg">
+                                `}
+                                <p class="mt-2 text-gray-600 dark:text-gray-400">${post.caption || 'No caption'}</p>
+                                <div class="flex justify-between mt-2">
+                                    <p class="text-gray-600 dark:text-gray-400">Likes: ${post.like_count.toLocaleString()}</p>
+                                    <p class="text-gray-600 dark:text-gray-400">Comments: ${post.comment_count.toLocaleString()}</p>
+                                </div>
+                                <p class="text-gray-500 dark:text-gray-400 text-sm mt-2">${new Date(post.timestamp * 1000).toLocaleDateString()}</p>
+                            </div>
+                        `;
+                        postsGrid.appendChild(postElement);
+                    });
+
+                    // Show Posts Section
+                    document.getElementById('postsSection').classList.remove('hidden');
+                } else {
+                    showError(profile.error || 'Failed to fetch profile data');
+                }
+            } catch (error) {
+                showError('Failed to fetch profile data. Please try again.');
+            }
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
